@@ -1,0 +1,62 @@
+import javax.xml.parsers.*;
+import javax.xml.xpath.XPath;
+import javax.xml.xpath.XPathConstants;
+import javax.xml.xpath.XPathFactory;
+
+import org.w3c.dom.*;
+import org.xml.sax.InputSource;
+
+import java.net.URL;
+import java.net.URLEncoder;
+import java.util.Scanner;
+
+class Xpath1 {
+
+    static void print ( Node e ) {
+	if (e instanceof Text)
+	    System.out.print(((Text) e).getData());
+	else {
+	    NodeList c = e.getChildNodes();
+	    System.out.print("<"+e.getNodeName());
+	    NamedNodeMap attributes = e.getAttributes();
+	    for (int i = 0; i < attributes.getLength(); i++)
+		System.out.print(" "+attributes.item(i).getNodeName()
+				 +"=\""+attributes.item(i).getNodeValue()+"\"");
+	    System.out.print(">");
+	    for (int k = 0; k < c.getLength(); k++)
+		print(c.item(k));
+	    System.out.print("</"+e.getNodeName()+">");
+	}
+    }
+    
+    static void eval ( String query, Document doc) throws Exception {
+    	XPathFactory xpathFactory = XPathFactory.newInstance();
+    	XPath xpath = xpathFactory.newXPath();
+    	//InputSource inputSource = new InputSource(doc);
+    	NodeList result = (NodeList) xpath.evaluate(query,doc,XPathConstants.NODESET);
+    	System.out.println("XPath query: "+query);
+    	for (int i = 0; i < result.getLength(); i++)
+    	    print(result.item(i));
+    	System.out.println();
+        }
+    
+    public static void main ( String args[] ) throws Exception {
+	    String s;
+	    Scanner in = new Scanner(System.in);
+	    System.out.println("Enter a string");
+	    s = in.nextLine();
+	    in.close();
+	    DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
+		DocumentBuilder db = dbf.newDocumentBuilder();
+		Document doc = db.parse((new URL("http://sandbox.api.ebaycommercenetwork.com/publisher/3.0/rest/GeneralSearch?apiKey=78b0db8a-0ee1-4939-a2f9-d3cd95ec0fcc&trackingId=7000610&category=72&keyword="+s+"&numItems=20")).openStream());
+		System.out.println("Query1");
+		eval("//GeneralSearchResponse/categories/category/items/product[rating/rating>=4.5]/fullDescription",doc);
+		System.out.println();
+		System.out.println("Query2");
+		eval("//GeneralSearchResponse/categories/category/items/product[name[contains(., 'Sony')]]/name | /GeneralSearchResponse/categories/category/items/product[name[contains(.,'Sony')]]/minPrice",doc);
+		System.out.println();
+		System.out.println("Query3");
+		eval("//GeneralSearchResponse/categories/category/items/product[name[contains(.,'Sony')] and  minPrice>=1000 and maxPrice<=2000]/name" ,doc);
+
+    }
+}
